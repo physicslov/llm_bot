@@ -10,8 +10,26 @@ st.set_page_config(
   layout='centered'
 )
 
-config_data = json.load(open('C:/Users/physi/OneDrive/Desktop/pyrh/config.json'))
-GROQ_API_KEY=  config_data['GROQ_API_KEY']
+try:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    base_dir = os.getcwd()  # Fallback to the current working directory
+
+# Define the relative path to the config file
+config_file_path = os.path.join(base_dir, 'config.json')
+try:
+    with open(config_file_path, 'r') as config_file:
+        config_data = json.load(config_file)
+        # Access the API key from the loaded config data
+        GROQ_API_KEY = config_data['GROQ_API_KEY']
+        print("Config data loaded successfully.")
+except FileNotFoundError:
+    print(f"Error: {config_file_path} not found.")
+except json.JSONDecodeError:
+    print(f"Error: Failed to decode JSON from {config_file_path}.")
+except KeyError:
+    print(f"Error: 'GROQ_API_KEY' not found in the config file.")
+
 os.environ['GROQ_API_KEY'] = GROQ_API_KEY
 client = Groq()
 
