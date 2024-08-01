@@ -48,7 +48,7 @@ for message in st.session_state.chat_history:
     st.markdown(message['content'])
     
 # input field for user message
-user_prompt = st.chat_input("ASK LLAMA...")
+user_prompt = st.chat_input("ASK Me...")
 
 if user_prompt:
   st.chat_message("user").markdown(user_prompt)
