@@ -1,13 +1,13 @@
 import os
 import json
-
+import fitz  # PyMuPDF for reading PDF files
 import streamlit as st
 from groq import Groq
 
 st.set_page_config(
-  page_title='Yantriki',
-  page_icon=" 🤖",
-  layout='centered'
+    page_title='Yantriki',
+    page_icon="🤖",
+    layout='centered'
 )
 
 try:
@@ -33,40 +33,61 @@ except KeyError:
 os.environ['GROQ_API_KEY'] = GROQ_API_KEY
 client = Groq()
 
-
-# initiallising the chat history as streamlit session state as not present already
-
+# Initialize chat history in Streamlit session state if not already present
 if 'chat_history' not in st.session_state:
-  st.session_state.chat_history = []
-  
-# streamlit page title
+    st.session_state.chat_history = []
+
+# Streamlit page title
 st.title('🤖 Yantriki: Your Personal Assistant')
 
-#display chat history
-for message in st.session_state.chat_history:
-  with st.chat_message(message['role']):
-    st.markdown(message['content'])
+# File uploader for PDF
+uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+
+if uploaded_file:
+    # Read the PDF and extract text
+    pdf_text = ""
+    pdf_document = fitz.open(stream=uploaded_file.read(), filetype="pdf")
     
-# input field for user message
+    for page_num in range(len(pdf_document)):
+        page = pdf_document.load_page(page_num)
+        pdf_text += page.get_text()
+
+    pdf_document.close()
+
+    # Display extracted text
+    st.write("Extracted text from PDF:")
+    st.write(pdf_text)
+
+    # Add the PDF text to the chat history for context
+    st.session_state.chat_history.append({'role': 'system', 'content': 'The following is text extracted from a PDF file:'})
+    st.session_state.chat_history.append({'role': 'system', 'content': pdf_text})
+
+# Display chat history
+for message in st.session_state.chat_history:
+    with st.chat_message(message['role']):
+        st.markdown(message['content'])
+
+# Input field for user message
 user_prompt = st.chat_input("ASK Me...")
 
 if user_prompt:
-  st.chat_message("user").markdown(user_prompt)
-  st.session_state.chat_history.append({'role':'user','content': user_prompt})
-  
-  # sens user's message to the LLm and get the response
-  messages=[
-    {'role':'system','content':'You are a helpful assistant'},
-    *st.session_state.chat_history
-  ]
-  
-  response = client.chat.completions.create(
-    model='llama-3.1-8b-instant',
-    messages=messages
-  )
-  
-  assistant_response = response.choices[0].message.content
-  st.session_state.chat_history.append({'role':'assistant','content':assistant_response})
-  
-  with st.chat_message('assistant'):
-    st.markdown(assistant_response)
+    st.chat_message("user").markdown(user_prompt)
+    st.session_state.chat_history.append({'role': 'user', 'content': user_prompt})
+    
+    # Send user's message and PDF text to the LLM and get the response
+    messages = [
+        {'role': 'system', 'content': 'You are a helpful assistant'},
+        *st.session_state.chat_history
+    ]
+    
+    response = client.chat.completions.create(
+        model='llama-3.1-8b-instant',
+        messages=messages
+    )
+    
+    assistant_response = response.choices[0].message.content
+    st.session_state.chat_history.append({'role': 'assistant', 'content': assistant_response})
+    
+    with st.chat_message('assistant'):
+        st.markdown(assistant_response)
+
