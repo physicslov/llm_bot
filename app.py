@@ -1,6 +1,5 @@
 import os
 import json
-import fitz  # PyMuPDF for reading PDF files
 import streamlit as st
 from groq import Groq
 
@@ -39,28 +38,6 @@ if 'chat_history' not in st.session_state:
 
 # Streamlit page title
 st.title('🤖 Yantriki: Your Personal Assistant')
-
-# File uploader for PDF
-uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
-
-if uploaded_file:
-    # Read the PDF and extract text
-    pdf_text = ""
-    pdf_document = fitz.open(stream=uploaded_file.read(), filetype="pdf")
-    
-    for page_num in range(len(pdf_document)):
-        page = pdf_document.load_page(page_num)
-        pdf_text += page.get_text()
-
-    pdf_document.close()
-
-    # Display extracted text
-    st.write("Extracted text from PDF:")
-    st.write(pdf_text)
-
-    # Add the PDF text to the chat history for context
-    st.session_state.chat_history.append({'role': 'system', 'content': 'The following is text extracted from a PDF file:'})
-    st.session_state.chat_history.append({'role': 'system', 'content': pdf_text})
 
 # Display chat history
 for message in st.session_state.chat_history:
